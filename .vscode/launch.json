@@ -1,0 +1,31 @@
+{
+    "name": "Python",
+    "pythonPath":"${config.python.pythonPath}",
+    "stopOnEntry": true,
+    "console": "none",
+    "program": "${file}",
+    "cwd": "${workspaceRoot}/src/",
+    "debugOptions": [
+        "WaitOnAbnormalExit",
+        "WaitOnNormalExit",
+        "RedirectOutput"
+    ],
+    "env": {"name":"value"},
+    "configurations": [
+        {
+            "name":"default",
+            "type": "python",
+            "request": "launch",
+            "pythonPath":"${config.python.pythonPath}",
+            "stopOnEntry": true,
+            "console": "none",
+            "program": "${file}",
+            "cwd": "${workspaceRoot}/src/",
+            "debugOptions": [
+                "WaitOnAbnormalExit",
+                "WaitOnNormalExit",
+                "RedirectOutput"
+            ]
+        }
+    ]
+}
