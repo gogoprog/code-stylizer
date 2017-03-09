@@ -39,10 +39,9 @@ def main(argv):
     else:
         do_tags(args.compiler_command_line, tagger)
 
-    out = open("/tmp/stl-stylizer.output", "wb")
+    out = open("/tmp/stl-stylizer.output.json", "wb")
 
-    formatter = ctags
-    out.write(formatter(tagger.tags))
+    out.write(format_json(tagger.tags))
 
 
 def clang_default_include():
@@ -184,14 +183,27 @@ class Tagger(object):
             cursor.location.offset))
 
 
-def ctags(tags):
+def format_json(tags):
     out = StringIO.StringIO()
+    out.write("[\n");
     for f in tags:
+        out.write(
+"""    {
+        "file":"%s",
+        "symbols": [
+""" % (f));
+
+
         for (line, t, _n, _) in tags[f]:
-            out.write("%s\t%s\t%s\n" % (
-                t,
-                f,
-                "/^%s$/" % line))
+            out.write(
+"""            {
+                "symbol":"%s"
+            },\n"""
+                % (t))
+
+        out.write("""]\n""");
+        
+    out.write("]");
     return out.getvalue()
 
 
