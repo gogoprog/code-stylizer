@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import StringIO
 import json
 import sys
 import time
@@ -20,19 +19,29 @@ from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, \
 
 
 def main(argv):
-    global args, invocation_dir
+    global args
     args = parse_args(argv)
-    invocation_dir = os.getcwd()
-    tagger = Tagger()
 
+    process_header("vector")
+    process_header("iostream")
+
+def process_header(name):
+    debug("  processing <" + name + "> header")
+    tagger = Tagger()
     symbols = {}
-    do_tags(["stl.cpp"], tagger, symbols)
+    file_name = "/tmp/stl-stylizer." + name + ".cpp"
+
+    out = open(file_name, "wb")
+    out.write("#include <" + name + ">\nint main(int argc, char *argv[]) { return EXIT_SUCCESS; }")
+    out.close()
+
+    do_tags([file_name], tagger, symbols)
 
     json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
 
-    out = open("/tmp/stl-stylizer.output.json", "wb")
-
+    out = open("/tmp/stl-stylizer." + name + ".json", "wb")
     out.write(json_output)
+    out.close()
 
 
 def clang_default_include():
