@@ -24,20 +24,7 @@ def main(argv):
     invocation_dir = os.getcwd()
     tagger = Tagger()
 
-    if args.compile_commands:
-        db_dir = (args.compile_commands if isdir(args.compile_commands)
-                  else dirname(args.compile_commands))
-        db = CompilationDatabase.fromDirectory(db_dir)
-        source_files = [realpath(x) for x in args.source_files]
-        for i, f in enumerate(source_files):
-            debug("Processing file %d of %d: %s" % (i+1, len(source_files), f))
-            for c in db.getCompileCommands(f) or []:
-                debug("* Found compile command: " + " ".join(list(c.arguments)))
-                with cwd(join(db_dir, c.directory)):
-                    debug("  run from directory: " + os.getcwd())
-                    do_tags(list(c.arguments)[1:], tagger, source_files)
-    else:
-        do_tags(args.compiler_command_line, tagger)
+    do_tags(["stl.cpp"], tagger)
 
     out = open("/tmp/stl-stylizer.output.json", "wb")
 
@@ -52,7 +39,7 @@ def clang_default_include():
     return next(line.strip() for line in out.split('\n') if reg.search(line))
 
 
-def do_tags(compiler_command_line, tagger, source_files=None):
+def do_tags(compiler_command_line, tagger):
     index = clang.cindex.Index.create()
 
     compiler_command_line = ['-I', clang_default_include()] + \
@@ -73,44 +60,21 @@ def do_tags(compiler_command_line, tagger, source_files=None):
         error("File '%s' failed clang's parsing and type-checking" %
               tu.spelling)
 
-    if not source_files:
-        source_files = [realpath(tu.spelling)]
-
     start = time.time()
     for c in tu.cursor.get_children():
-        do_cursor(c, tagger, source_files)
+        do_cursor(c, tagger)
     debug("  tag generation took %.2fs" % (time.time() - start))
 
 
-def do_cursor(cursor, tagger, source_files):
-    if not should_tag_file(cursor.location.file, source_files):
-        return
+def do_cursor(cursor, tagger):
 
     if is_definition(cursor):
         parents = semantic_parents(cursor)
-        if args.extra_qualifier_tags:
-            tagger.tag(
-                cursor, "::" + "::".join(parents + [cursor.displayname]))
-            for i in range(len(parents) + 1):
-                tagger.tag(
-                    cursor, "::".join(parents[i:] + [cursor.displayname]))
-        else:
-            tagger.tag(cursor, "::".join(parents + [cursor.displayname]))
+        tagger.tag(cursor, "::".join(parents + [cursor.displayname]))
 
     if should_tag_children(cursor):
         for c in cursor.get_children():
-            do_cursor(c, tagger, source_files)
-
-
-def should_tag_file(f, source_files):
-    def is_system_header():
-        return (isabs(f.name) and
-                relpath(f.name, invocation_dir).startswith(".."))
-
-    return (f and
-            (True or
-             (args.non_system_headers and not is_system_header()) or
-             realpath(f.name) in source_files))
+            do_cursor(c, tagger)
 
 
 def is_definition(cursor):
@@ -185,7 +149,7 @@ class Tagger(object):
 
 def format_json(tags):
     out = StringIO.StringIO()
-    out.write("[\n");
+    out.write("[\n")
     for f in tags:
         out.write(
 """    {
@@ -202,8 +166,8 @@ def format_json(tags):
                 % (t))
 
         out.write("""]\n""");
-        
-    out.write("]");
+
+    out.write("]")
     return out.getvalue()
 
 
@@ -228,24 +192,9 @@ def parse_args(argv):
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="enable debugging output")
     parser.add_argument("--version", action="version",
-                        version="clang-ctags 0.2")
-    parser.add_argument("--compile-commands", metavar="COMPILE_COMMANDS.JSON",
-        help="database of compilation command lines for each source file")
-    parser.add_argument("--non-system-headers", action="store_true",
-        help="write tags for all non-system header files encountered")
-    parser.add_argument("--extra-qualifier-tags", action="store_true",
-        help="write separate tags for each level of namespace/class qualifier")
-    parser.add_argument("--suppress-qualifier-tags", action="store_false",
-        dest="extra_qualifier_tags", help=argparse.SUPPRESS)
+                        version="stl-stylizer 0.1")
 
     a = parser.parse_args(argv[1:])
-
-    if a.compile_commands:
-        a.source_files = a.args
-    else:
-        a.source_files = []
-        a.compiler_command_line = ["stl.cpp"]
-
 
     return a
 
