@@ -3,6 +3,7 @@
 import argparse
 import os
 import StringIO
+import json
 import sys
 import time
 import traceback
@@ -19,16 +20,19 @@ from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, \
 
 
 def main(argv):
-    global args, invocation_dir  # pylint:disable=global-variable-undefined
+    global args, invocation_dir
     args = parse_args(argv)
     invocation_dir = os.getcwd()
     tagger = Tagger()
 
-    do_tags(["stl.cpp"], tagger)
+    symbols = {}
+    do_tags(["stl.cpp"], tagger, symbols)
+
+    json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
 
     out = open("/tmp/stl-stylizer.output.json", "wb")
 
-    out.write(format_json(tagger.tags))
+    out.write(json_output)
 
 
 def clang_default_include():
@@ -39,7 +43,7 @@ def clang_default_include():
     return next(line.strip() for line in out.split('\n') if reg.search(line))
 
 
-def do_tags(compiler_command_line, tagger):
+def do_tags(compiler_command_line, tagger, symbols):
     index = clang.cindex.Index.create()
 
     compiler_command_line = ['-I', clang_default_include()] + \
@@ -62,19 +66,27 @@ def do_tags(compiler_command_line, tagger):
 
     start = time.time()
     for c in tu.cursor.get_children():
-        do_cursor(c, tagger)
+        do_cursor(c, tagger, symbols)
     debug("  tag generation took %.2fs" % (time.time() - start))
 
 
-def do_cursor(cursor, tagger):
+def do_cursor(cursor, tagger, symbols):
 
     if is_definition(cursor):
         parents = semantic_parents(cursor)
+        directParent = symbols
+        for p in parents:
+            if not p in directParent:
+                directParent[p] = {'name':p}
+            directParent = directParent[p]
+
+        directParent[cursor.displayname] = {'type':cursor.kind.value}
+
         tagger.tag(cursor, "::".join(parents + [cursor.displayname]))
 
     if should_tag_children(cursor):
         for c in cursor.get_children():
-            do_cursor(c, tagger)
+            do_cursor(c, tagger, symbols)
 
 
 def is_definition(cursor):
@@ -126,7 +138,7 @@ def is_named_scope(cursor):
 
 class Tagger(object):
     def __init__(self):
-        self.tags = {}  # {file: [(line, tag, linenumber, bytenumber), ...]}
+        self.tags = {}
         self.current_file_name = None
         self.current_file_lines = None
 
@@ -140,35 +152,11 @@ class Tagger(object):
         if self.current_file_name not in self.tags:
             self.tags[self.current_file_name] = set()
 
-        self.tags[self.current_file_name].add((
+        return self.tags[self.current_file_name].add((
             self.current_file_lines[cursor.location.line - 1].rstrip(),
             tagname,
             cursor.location.line,
             cursor.location.offset))
-
-
-def format_json(tags):
-    out = StringIO.StringIO()
-    out.write("[\n")
-    for f in tags:
-        out.write(
-"""    {
-        "file":"%s",
-        "symbols": [
-""" % (f));
-
-
-        for (line, t, _n, _) in tags[f]:
-            out.write(
-"""            {
-                "symbol":"%s"
-            },\n"""
-                % (t))
-
-        out.write("""]\n""");
-
-    out.write("]")
-    return out.getvalue()
 
 
 @contextmanager
