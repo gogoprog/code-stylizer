@@ -16,14 +16,14 @@ import subprocess
 import re
 
 import clang.cindex
-from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, \
-    TranslationUnit
-
+from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit
 
 def main(argv):
     global args
-    args = parse_args(argv)
+    global initialCwd
 
+    args = parse_args(argv)
+    initialCwd = os.getcwd()
     process_header("vector")
     process_header("iostream")
 
@@ -33,16 +33,24 @@ def process_header(name):
     symbols = {}
     file_name = "/tmp/stl-stylizer." + name + ".cpp"
 
+    os.chdir(initialCwd)
     out = open(file_name, "wb")
     out.write("#include <" + name + ">\nint main(int argc, char *argv[]) { return EXIT_SUCCESS; }")
     out.close()
 
     do_tags([file_name], tagger, symbols)
 
-    out = open("/tmp/stl-stylizer." + name + ".h", "wb")
+    os.chdir("..")
+    if not os.path.exists("out"):
+        os.makedirs("out")
+
+    out = open("out/" + name + ".h", "wb")
     process_symbols(out, symbols)
     out.close()
 
+    print("  generated out/" + name + ".h")
+
+    os.chdir(initialCwd)
     json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
     out = open("/tmp/stl-stylizer." + name + ".json", "wb")
     out.write(json_output)
@@ -51,9 +59,7 @@ def process_header(name):
 def process_symbols(out, symbols):
     for s in symbols:
         if s != "$type":
-            print(s)
             if symbols[s]['$type'] == CursorKind.NAMESPACE.value:
-                print("oui")
                 out.write("namespace " + s + " {\n")
                 process_symbols(out, symbols[s])
                 out.write("}\n")
@@ -69,8 +75,8 @@ def clang_default_include():
 def do_tags(compiler_command_line, tagger, symbols):
     index = clang.cindex.Index.create()
 
-    compiler_command_line = ['-I', clang_default_include()] + \
-                            compiler_command_line
+    compiler_command_line = ['-I', clang_default_include()] + compiler_command_line
+
     try:
         start = time.time()
         tu = index.parse(None, compiler_command_line,
@@ -187,18 +193,6 @@ class Tagger(object):
             cursor.location.line,
             cursor.location.offset))
 
-
-@contextmanager
-def cwd(directory):
-    """Run a block of code from a specified working directory"""
-    old_dir = os.getcwd()
-    os.chdir(directory)
-    try:
-        yield
-    finally:
-        os.chdir(old_dir)
-
-
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="Generate STL headers in different coding style.",
@@ -213,7 +207,6 @@ def parse_args(argv):
 
     return a
 
-
 def debug(s):
     if args.verbose:
         sys.stderr.write(s + "\n")
@@ -224,7 +217,6 @@ def warn(s):
 def error(s):
     sys.stderr.write("%s: Error: %s\n" % (basename(sys.argv[0]), s))
     sys.exit(1)
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
