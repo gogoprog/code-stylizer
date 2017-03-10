@@ -75,12 +75,16 @@ def do_cursor(cursor, tagger, symbols):
     if is_definition(cursor):
         parents = semantic_parents(cursor)
         directParent = symbols
+
         for p in parents:
             if not p in directParent:
                 directParent[p] = {'name':p}
             directParent = directParent[p]
 
-        directParent[cursor.displayname] = {'$type':cursor.kind.value}
+        name = cursor.displayname
+
+        if not name in directParent:
+            directParent[cursor.displayname] = {'$type':cursor.kind.value}
 
         tagger.tag(cursor, "::".join(parents + [cursor.displayname]))
 
@@ -146,6 +150,7 @@ class Tagger(object):
         """The complete tags file entry for symbol 'tag'."""
         if self.current_file_name != realpath(cursor.location.file.name):
             self.current_file_name = realpath(cursor.location.file.name)
+            debug("  opening " + self.current_file_name)
             with open(self.current_file_name) as f:
                 self.current_file_lines = f.readlines()
 
