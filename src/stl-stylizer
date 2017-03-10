@@ -6,6 +6,8 @@ import json
 import sys
 import time
 import traceback
+import collections
+
 from contextlib import contextmanager
 from os.path import basename, dirname, isabs, isdir, join, realpath, relpath
 from textwrap import dedent
@@ -37,12 +39,24 @@ def process_header(name):
 
     do_tags([file_name], tagger, symbols)
 
-    json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
+    out = open("/tmp/stl-stylizer." + name + ".h", "wb")
+    process_symbols(out, symbols)
+    out.close()
 
+    json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
     out = open("/tmp/stl-stylizer." + name + ".json", "wb")
     out.write(json_output)
     out.close()
 
+def process_symbols(out, symbols):
+    for s in symbols:
+        if s != "$type":
+            print(s)
+            if symbols[s]['$type'] == CursorKind.NAMESPACE.value:
+                print("oui")
+                out.write("namespace " + s + " {\n")
+                process_symbols(out, symbols[s])
+                out.write("}\n")
 
 def clang_default_include():
     sub = subprocess.Popen(['clang', '-v', '-x', 'c++', '-'],
@@ -86,16 +100,19 @@ def do_cursor(cursor, tagger, symbols):
         directParent = symbols
 
         for p in parents:
-            if not p in directParent:
-                directParent[p] = {'name':p}
-            directParent = directParent[p]
+            pname = p['name']
+            if not pname in directParent:
+                directParent[pname] = {'$type':p['kind']}
+            directParent = directParent[pname]
 
         name = cursor.displayname
 
         if not name in directParent:
-            directParent[cursor.displayname] = {'$type':cursor.kind.value}
+            directParent[name] = {'$type':cursor.kind.value}
+        else:
+            directParent[name]['$type'] = cursor.kind.value
 
-        tagger.tag(cursor, "::".join(parents + [cursor.displayname]))
+        tagger.tag(cursor, name)
 
     if should_tag_children(cursor):
         for c in cursor.get_children():
@@ -120,12 +137,10 @@ def is_definition(cursor):
 
 
 def semantic_parents(cursor):
-    import collections
-
     p = collections.deque()
     c = cursor.semantic_parent
     while c and is_named_scope(c):
-        p.appendleft(c.displayname)
+        p.appendleft({'name':c.displayname, 'kind':c.kind.value})
         c = c.semantic_parent
     return list(p)
 
