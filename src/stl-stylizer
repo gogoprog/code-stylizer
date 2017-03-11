@@ -56,13 +56,27 @@ def process_header(name):
     out.write(json_output)
     out.close()
 
+def write_namespace(out, symbol, name):
+    out.write("namespace " + name + " {\n")
+    process_symbols(out, symbol)
+    out.write("}\n")
+
+def write_class(out, symbol, name):
+    out.write("class " + name + " {\n")
+    process_symbols(out, symbol)
+    out.write("}\n")
+
+writers = {
+    CursorKind.NAMESPACE.value: write_namespace,
+    CursorKind.CLASS_DECL.value: write_class
+}
+
 def process_symbols(out, symbols):
     for s in symbols:
         if s != "$type":
-            if symbols[s]['$type'] == CursorKind.NAMESPACE.value:
-                out.write("namespace " + s + " {\n")
-                process_symbols(out, symbols[s])
-                out.write("}\n")
+            if symbols[s]['$type'] in writers:
+                writer = writers[symbols[s]['$type']]
+                writer(out, symbols[s], s)
 
 def clang_default_include():
     sub = subprocess.Popen(['clang', '-v', '-x', 'c++', '-'],
