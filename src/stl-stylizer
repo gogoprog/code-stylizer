@@ -51,10 +51,10 @@ def process_header(name):
     print("  generated out/" + name + ".h")
 
     os.chdir(initialCwd)
-    json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
-    out = open("/tmp/stl-stylizer." + name + ".json", "wb")
-    out.write(json_output)
-    out.close()
+    #json_output = json.dumps(symbols, sort_keys=True, indent=4, separators=(',', ': '))
+    #out = open("/tmp/stl-stylizer." + name + ".json", "wb")
+    #out.write(json_output)
+    #out.close()
 
 def write_namespace(out, symbols, name):
     out.write("namespace " + name + " {\n")
@@ -66,19 +66,19 @@ def write_class(out, symbols, name):
     process_symbols(out, symbols[name])
     out.write("}\n")
 
-def write_using(out, symbols, name):
-    out.write("\tusing " + name + " = " + symbols["$name"] + "::" + name + ";\n")
+def write_method(out, symbols, name):
+    out.write("\tvoid todo" + name + "  " + symbols["$name"] + "::" + name + ";\n")
 
 writers = {
     CursorKind.NAMESPACE.value: write_namespace,
     CursorKind.CLASS_DECL.value: write_class,
     CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
-    CursorKind.CXX_METHOD.value: write_using
+    CursorKind.CXX_METHOD.value: write_method
 }
 
 def process_symbols(out, symbols):
     for s in symbols:
-        if s != "$type" and s != "$name":
+        if s != "$type" and s != "$name" and s != "$cursor":
             if symbols[s]['$type'] in writers:
                 writer = writers[symbols[s]['$type']]
                 writer(out, symbols, s)
@@ -136,6 +136,7 @@ def do_cursor(cursor, tagger, symbols):
         else:
             directParent[name]['$type'] = cursor.kind.value
             directParent[name]['$name'] = name
+            directParent[name]['$cursor'] = cursor
 
         tagger.tag(cursor, name)
 
