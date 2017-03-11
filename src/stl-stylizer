@@ -98,7 +98,6 @@ def do_tags(compiler_command_line, tagger, symbols):
         do_cursor(c, tagger, symbols)
     debug("  tag generation took %.2fs" % (time.time() - start))
 
-
 def do_cursor(cursor, tagger, symbols):
 
     if is_definition(cursor):
@@ -124,7 +123,6 @@ def do_cursor(cursor, tagger, symbols):
         for c in cursor.get_children():
             do_cursor(c, tagger, symbols)
 
-
 def is_definition(cursor):
     return (
         (cursor.is_definition() and not cursor.kind in [
@@ -141,7 +139,6 @@ def is_definition(cursor):
             CursorKind.FUNCTION_TEMPLATE,
             ])
 
-
 def semantic_parents(cursor):
     p = collections.deque()
     c = cursor.semantic_parent
@@ -150,13 +147,11 @@ def semantic_parents(cursor):
         c = c.semantic_parent
     return list(p)
 
-
 def should_tag_children(cursor):
     return is_named_scope(cursor) or cursor.kind in [
         # 'extern "C" { ... }' should be LINKAGE_SPEC but is UNEXPOSED_DECL
         CursorKind.UNEXPOSED_DECL,
         ]
-
 
 def is_named_scope(cursor):
     return cursor.kind in [
@@ -168,7 +163,6 @@ def is_named_scope(cursor):
         CursorKind.CLASS_TEMPLATE,
         CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION,
         ]
-
 
 class Tagger(object):
     def __init__(self):
