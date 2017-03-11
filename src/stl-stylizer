@@ -56,27 +56,32 @@ def process_header(name):
     out.write(json_output)
     out.close()
 
-def write_namespace(out, symbol, name):
+def write_namespace(out, symbols, name):
     out.write("namespace " + name + " {\n")
-    process_symbols(out, symbol)
+    process_symbols(out, symbols[name])
     out.write("}\n")
 
-def write_class(out, symbol, name):
-    out.write("class " + name + " {\n")
-    process_symbols(out, symbol)
+def write_class(out, symbols, name):
+    out.write("class " + name + " : public " + name + " {\n")
+    process_symbols(out, symbols[name])
     out.write("}\n")
+
+def write_using(out, symbols, name):
+    out.write("\tusing " + name + " = " + symbols["$name"] + "::" + name + ";\n")
 
 writers = {
     CursorKind.NAMESPACE.value: write_namespace,
-    CursorKind.CLASS_DECL.value: write_class
+    CursorKind.CLASS_DECL.value: write_class,
+    CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
+    CursorKind.CXX_METHOD.value: write_using
 }
 
 def process_symbols(out, symbols):
     for s in symbols:
-        if s != "$type":
+        if s != "$type" and s != "$name":
             if symbols[s]['$type'] in writers:
                 writer = writers[symbols[s]['$type']]
-                writer(out, symbols[s], s)
+                writer(out, symbols, s)
 
 def clang_default_include():
     sub = subprocess.Popen(['clang', '-v', '-x', 'c++', '-'],
@@ -121,15 +126,16 @@ def do_cursor(cursor, tagger, symbols):
         for p in parents:
             pname = p['name']
             if not pname in directParent:
-                directParent[pname] = {'$type':p['kind']}
+                directParent[pname] = {'$type':p['kind'], '$name':pname}
             directParent = directParent[pname]
 
         name = cursor.displayname
 
         if not name in directParent:
-            directParent[name] = {'$type':cursor.kind.value}
+            directParent[name] = {'$type':cursor.kind.value, '$name':name}
         else:
             directParent[name]['$type'] = cursor.kind.value
+            directParent[name]['$name'] = name
 
         tagger.tag(cursor, name)
 
