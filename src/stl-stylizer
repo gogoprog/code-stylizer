@@ -16,7 +16,7 @@ import subprocess
 import re
 
 import clang.cindex
-from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit
+from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind
 
 class Tagger:
     def __init__(self):
@@ -25,7 +25,6 @@ class Tagger:
         self.current_file_lines = None
 
     def tag(self, cursor, tagname):
-        """The complete tags file entry for symbol 'tag'."""
         if self.current_file_name != realpath(cursor.location.file.name):
             self.current_file_name = realpath(cursor.location.file.name)
             debug("  opening " + self.current_file_name)
@@ -63,7 +62,7 @@ def main(argv):
     args = parse_args(argv)
     initialCwd = os.getcwd()
     process_header("vector")
-    process_header("iostream")
+    #process_header("iostream")
 
 def process_header(name):
     debug("  processing <" + name + "> header")
@@ -101,12 +100,16 @@ def write_class(out, entry):
     out.write("}\n")
 
 def write_method(out, entry):
-    out.write("\tvoid " + entry.name + " {\n\t\t" + entry.name + ";\n\t}\n")
+    if entry.cursor.result_type.kind == TypeKind.VOID:
+        out.write("\tvoid " + entry.name + " {\n\t\t" + entry.name + ";\n\t}\n")
+    else:
+        out.write("\tauto " + entry.name + " {\n\t\treturn " + entry.name + ";\n\t}\n")
 
 writers = {
     CursorKind.NAMESPACE.value: write_namespace,
     CursorKind.CLASS_DECL.value: write_class,
     CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
+    CursorKind.CLASS_TEMPLATE.value: write_class,
     CursorKind.CXX_METHOD.value: write_method
 }
 
