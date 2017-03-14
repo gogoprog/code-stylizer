@@ -89,36 +89,6 @@ def process_header(name):
 
     os.chdir(initialCwd)
 
-def write_namespace(out, entry):
-    out.write("namespace " + entry.name + " {\n")
-    process_entry(out, entry)
-    out.write("}\n")
-
-def write_class(out, entry):
-    out.write("class " + entry.name + " : public " + entry.name + " {\n")
-    process_entry(out, entry)
-    out.write("}\n")
-
-def write_method(out, entry):
-    if entry.cursor.result_type.kind == TypeKind.VOID:
-        out.write("\tvoid " + entry.name + " {\n\t\t" + entry.name + ";\n\t}\n")
-    else:
-        out.write("\tauto " + entry.name + " {\n\t\treturn " + entry.name + ";\n\t}\n")
-
-writers = {
-    CursorKind.NAMESPACE.value: write_namespace,
-    CursorKind.CLASS_DECL.value: write_class,
-    CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
-    CursorKind.CLASS_TEMPLATE.value: write_class,
-    CursorKind.CXX_METHOD.value: write_method
-}
-
-def process_entry(out, entry):
-    for child_entry in entry.children:
-        if child_entry.cursor.kind.value in writers:
-            writer = writers[child_entry.cursor.kind.value]
-            writer(out, child_entry)
-
 def clang_default_include():
     sub = subprocess.Popen(['clang', '-v', '-x', 'c++', '-'],
                            stdin=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -243,6 +213,72 @@ def warn(s):
 def error(s):
     sys.stderr.write("%s: Error: %s\n" % (basename(sys.argv[0]), s))
     sys.exit(1)
+
+def write_namespace(out, entry):
+    out.write("namespace " + entry.name + " {\n")
+    process_entry(out, entry)
+    out.write("}\n")
+
+def write_class(out, entry):
+    out.write("class " + entry.name + " : public " + entry.name + " {\n")
+    process_entry(out, entry)
+    out.write("}\n")
+
+def write_method(out, entry):
+    name = get_method_name(entry.name)
+    named_args = get_method_named_args_def(entry.name)
+    has_result = entry.cursor.result_type.kind == TypeKind.VOID
+
+    out.write("\t" + ("auto " if has_result else "void ") + name + named_args
+              + " {\n\t\t" + ("return " if has_result else "")  + entry.name + ";\n\t}\n")
+
+
+writers = {
+    CursorKind.NAMESPACE.value: write_namespace,
+    CursorKind.CLASS_DECL.value: write_class,
+    CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
+    CursorKind.CLASS_TEMPLATE.value: write_class,
+    CursorKind.CXX_METHOD.value: write_method
+}
+
+def process_entry(out, entry):
+    for child_entry in entry.children:
+        if child_entry.cursor.kind.value in writers:
+            writer = writers[child_entry.cursor.kind.value]
+            writer(out, child_entry)
+
+def get_method_name(displayname):
+    return displayname[:displayname.index('(')]
+
+def get_method_named_args_def(displayname):
+    args = displayname[displayname.index('('):]
+    arg_index = 0
+    index = 1
+    previous_index = 1
+    result = "("
+    while index != -1:
+        index = args.find(',', index)
+
+        template_index = args.find('<', previous_index, index)
+
+        if template_index != -1:
+            index = args.find('>', template_index)
+            index = args.find(',', index)
+
+        if index == -1:
+            break
+
+        result += args[previous_index:index]
+        result += " " + chr(ord('a') + arg_index) + ","
+        index += 1
+        previous_index = index
+        arg_index += 1
+
+    index = args.find(')', index)
+    result += args[previous_index:index]
+    result += " " + chr(ord('a') + arg_index) + ")"
+
+    return result
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
