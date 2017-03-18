@@ -16,7 +16,7 @@ import subprocess
 import re
 
 import clang.cindex
-from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind
+from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind, AccessSpecifier
 
 class Tagger:
     def __init__(self):
@@ -220,17 +220,20 @@ def write_namespace(out, entry):
     out.write("}\n")
 
 def write_class(out, entry):
+    if entry.name[0] == '_':
+        return
     out.write("class " + entry.name + " : public " + entry.name + " {\n")
     process_entry(out, entry)
     out.write("}\n")
 
 def write_method(out, entry):
-    name = get_method_name(entry.name)
-    named_args = get_method_named_args_def(entry.name)
-    has_result = entry.cursor.result_type.kind == TypeKind.VOID
+    if entry.cursor.access_specifier == AccessSpecifier.PUBLIC:
+        name = get_method_name(entry.name)
+        named_args = get_method_named_args_def(entry.name)
+        has_result = entry.cursor.result_type.kind == TypeKind.VOID
 
-    out.write("\t" + ("auto " if has_result else "void ") + name + named_args
-              + " {\n\t\t" + ("return " if has_result else "")  + entry.name + ";\n\t}\n")
+        out.write("\t" + ("auto " if has_result else "void ") + name + named_args
+                + " {\n\t\t" + ("return " if has_result else "")  + entry.name + ";\n\t}\n")
 
 
 writers = {
