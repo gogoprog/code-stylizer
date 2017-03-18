@@ -228,12 +228,14 @@ def write_class(out, entry):
 
 def write_method(out, entry):
     if entry.cursor.access_specifier == AccessSpecifier.PUBLIC:
-        name = get_method_name(entry.name)
-        named_args = get_method_named_args_def(entry.name)
-        has_result = entry.cursor.result_type.kind == TypeKind.VOID
+        if entry.name[:8] != "operator":
+            name = get_method_name(entry.name)
+            named_args = get_method_named_args_def(entry.name)
+            call_str = get_method_call(entry.name)
+            has_result = (entry.cursor.result_type.kind != TypeKind.VOID)
 
-        out.write("\t" + ("auto " if has_result else "void ") + name + named_args
-                + " {\n\t\t" + ("return " if has_result else "")  + entry.name + ";\n\t}\n")
+            out.write("\t" + ("auto " if has_result else "void ") + name + named_args
+                    + " {\n\t\t" + ("return " if has_result else "")  + call_str + ";\n\t}\n")
 
 
 writers = {
@@ -255,10 +257,14 @@ def get_method_name(displayname):
 
 def get_method_named_args_def(displayname):
     args = displayname[displayname.index('('):]
+
+    if len(args) == 2:
+        return args
+
     arg_index = 0
     index = 1
     previous_index = 1
-    result = "("
+    result = '('
     while index != -1:
         index = args.find(',', index)
 
@@ -279,7 +285,24 @@ def get_method_named_args_def(displayname):
 
     index = args.find(')', index)
     result += args[previous_index:index]
-    result += " " + chr(ord('a') + arg_index) + ")"
+    result += " " + chr(ord('a') + arg_index) + ')'
+
+    return result
+
+def get_method_call(displayname):
+    args = displayname[displayname.index('('):]
+
+    if len(args) == 2:
+        return displayname
+
+    count = args.count(',') + 1
+
+    result = get_method_name(displayname) + '('
+    for i in range(0, count):
+        result += chr(ord('a') + i)
+        if i != count - 1:
+            result += ', '
+    result += ')'
 
     return result
 
