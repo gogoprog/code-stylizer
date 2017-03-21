@@ -79,7 +79,6 @@ def process_header(name):
 
     do_tags([file_name], tagger, root_entry)
 
-    os.chdir("..")
     if not os.path.exists("out"):
         os.makedirs("out")
 
@@ -330,5 +329,3 @@ def snake_to_pascal_case(input):
         result += w[1:]
     return result
 
-if __name__ == "__main__":
-    sys.exit(main(sys.argv))
