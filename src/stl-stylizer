@@ -47,6 +47,7 @@ class Entry:
         self.name = name
         self.cursor = cursor
         self.parent = None
+        self.bases = []
     def has_child(self, name):
         return name in self.children_map
     def add_child(self, entry):
@@ -54,6 +55,7 @@ class Entry:
         self.children.append(entry)
         entry.parent = self
         return entry
+
 
 def main(argv):
     global args
@@ -114,7 +116,7 @@ def do_tags(compiler_command_line, tagger, root_entry):
     debug("  tag generation took %.2fs" % (time.time() - start))
 
 def do_cursor(cursor, tagger, root_entry):
-
+    global lastEntry
     if is_definition(cursor):
         parents = semantic_parents(cursor)
         direct_parent = root_entry
@@ -128,15 +130,20 @@ def do_cursor(cursor, tagger, root_entry):
         name = cursor.displayname
 
         if not direct_parent.has_child(name):
-            direct_parent.add_child(Entry(name, cursor))
+            lastEntry = Entry(name, cursor)
+            direct_parent.add_child(lastEntry)
         else:
-            direct_parent.children_map[name].cursor = cursor
+            lastEntry = direct_parent.children_map[name]
+            lastEntry.cursor = cursor
 
         tagger.tag(cursor, name)
 
     if should_tag_children(cursor):
         for c in cursor.get_children():
             do_cursor(c, tagger, root_entry)
+
+    if cursor.kind == CursorKind.CXX_BASE_SPECIFIER:
+        lastEntry.bases.append(cursor)
 
 def is_definition(cursor):
     return (
@@ -212,7 +219,16 @@ def write_namespace(out, entry):
 def write_class(out, entry):
     if entry.name[0] == '_':
         return
-    out.write("class " + snake_to_pascal_case(entry.name) + " : public " + entry.name + " {\n")
+    out.write("class " + snake_to_pascal_case(entry.name) + " : ")
+    if len(entry.bases) > 0:
+        if entry.bases[0].displayname[0] != "_":
+            out.write("public " + snake_to_pascal_case(entry.bases[0].displayname) + ", ")
+
+    out.write("public " + entry.name)
+
+    out.write(" {\n")
+
+    out.write("public:\n\tusing " + entry.name + "::" + entry.name + ";\n")
     process_entry(out, entry)
     out.write("}\n")
 
