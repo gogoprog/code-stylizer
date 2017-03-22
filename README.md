@@ -1,5 +1,5 @@
-# stl-stylizer
-Generates C++ wrapper for STL in different coding style
+# code-stylizer
+Generates C++ wrapper for any header in different coding style
 
 #### Requirements
 

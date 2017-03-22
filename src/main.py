@@ -59,6 +59,7 @@ def process_header(name):
         os.makedirs("out")
 
     out = open("out/" + name + ".h", "wb")
+    out.write("/* Generated with code-stylizer - https://github.com/gogoprog/code-stylizer */\n")
     writers.process_entry(out, root_entry)
     out.close()
 
