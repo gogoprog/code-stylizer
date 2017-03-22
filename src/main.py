@@ -4,6 +4,8 @@ import sys
 import time
 import traceback
 import collections
+import subprocess
+import re
 from os.path import realpath
 import clang.cindex
 from clang.cindex import CursorKind, Diagnostic, TranslationUnit
@@ -69,8 +71,17 @@ def process_header(header):
 
     os.chdir(initialCwd)
 
+def clang_default_include():
+    sub = subprocess.Popen(['clang', '-v', '-x', 'c++', '-'],
+                           stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    _, out = sub.communicate('')
+    reg = re.compile('lib/clang.*/include$')
+    return next(line.strip() for line in out.split('\n') if reg.search(line))
+
 def do_tags(compiler_command_line, tagger, root_entry):
     index = clang.cindex.Index.create()
+
+    compiler_command_line = ['-I', clang_default_include()] + compiler_command_line
 
     try:
         start = time.time()
