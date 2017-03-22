@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-
 import argparse
 import os
 import json
@@ -17,6 +15,10 @@ import re
 
 import clang.cindex
 from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind, AccessSpecifier
+
+from entry import Entry
+from conversions import *
+import writers
 
 class Tagger:
     def __init__(self):
@@ -39,23 +41,6 @@ class Tagger:
             tagname,
             cursor.location.line,
             cursor.location.offset))
-
-class Entry:
-    def __init__(self, name, cursor=None):
-        self.children = []
-        self.children_map = {}
-        self.name = name
-        self.cursor = cursor
-        self.parent = None
-        self.bases = []
-    def has_child(self, name):
-        return name in self.children_map
-    def add_child(self, entry):
-        self.children_map[entry.name] = entry
-        self.children.append(entry)
-        entry.parent = self
-        return entry
-
 
 def main(argv):
     global args
@@ -83,7 +68,7 @@ def process_header(name):
         os.makedirs("out")
 
     out = open("out/" + name + ".h", "wb")
-    process_entry(out, root_entry)
+    writers.process_entry(out, root_entry)
     out.close()
 
     print("  generated out/" + name + ".h")
@@ -210,122 +195,5 @@ def error(s):
     sys.stderr.write("%s: Error: %s\n" % (basename(sys.argv[0]), s))
     sys.exit(1)
 
-def write_namespace(out, entry):
-    out.write("namespace " + entry.name + " {\n")
-    process_entry(out, entry)
-    out.write("}\n")
 
-def write_class(out, entry):
-    if entry.name[0] == '_':
-        return
-    out.write("class " + snake_to_pascal_case(entry.name) + " : ")
-    if len(entry.bases) > 0:
-        if entry.bases[0].displayname[0] != "_":
-            out.write("public " + snake_to_pascal_case(entry.bases[0].displayname) + ", ")
-
-    out.write("public " + entry.name)
-
-    out.write(" {\n")
-
-    out.write("public:\n\tusing " + entry.name + "::" + entry.name + ";\n")
-    process_entry(out, entry)
-    out.write("}\n")
-
-def write_method(out, entry):
-    if entry.cursor.access_specifier == AccessSpecifier.PUBLIC:
-        if entry.name[:8] != "operator":
-            name = get_method_name(entry.name)
-            named_args = get_method_named_args_def(entry.name)
-            call_str = get_method_call(entry.name)
-            has_result = (entry.cursor.result_type.kind != TypeKind.VOID)
-
-            out.write("\t" + ("auto " if has_result else "void ") + snake_to_camel_case(entry.name) + named_args
-                    + " {\n\t\t" + ("return " if has_result else "")  + call_str + ";\n\t}\n")
-
-
-writers = {
-    CursorKind.NAMESPACE.value: write_namespace,
-    CursorKind.CLASS_DECL.value: write_class,
-    CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class,
-    CursorKind.CLASS_TEMPLATE.value: write_class,
-    CursorKind.CXX_METHOD.value: write_method
-}
-
-def process_entry(out, entry):
-    for child_entry in entry.children:
-        if child_entry.cursor.kind.value in writers:
-            writer = writers[child_entry.cursor.kind.value]
-            writer(out, child_entry)
-
-def get_method_name(displayname):
-    return displayname[:displayname.index('(')]
-
-def get_method_named_args_def(displayname):
-    args = displayname[displayname.index('('):]
-
-    if len(args) == 2:
-        return args
-
-    arg_index = 0
-    index = 1
-    previous_index = 1
-    result = '('
-    while index != -1:
-        index = args.find(',', index)
-
-        template_index = args.find('<', previous_index, index)
-
-        if template_index != -1:
-            index = args.find('>', template_index)
-            index = args.find(',', index)
-
-        if index == -1:
-            break
-
-        result += args[previous_index:index]
-        result += " " + chr(ord('a') + arg_index) + ","
-        index += 1
-        previous_index = index
-        arg_index += 1
-
-    index = args.find(')', index)
-    result += args[previous_index:index]
-    result += " " + chr(ord('a') + arg_index) + ')'
-
-    return result
-
-def get_method_call(displayname):
-    args = displayname[displayname.index('('):]
-
-    if len(args) == 2:
-        return displayname
-
-    count = args.count(',') + 1
-
-    result = get_method_name(displayname) + '('
-    for i in range(0, count):
-        result += chr(ord('a') + i)
-        if i != count - 1:
-            result += ', '
-    result += ')'
-
-    return result
-
-def snake_to_camel_case(input):
-    words = input.split('_')
-    result = ""
-    first = True
-    for w in words:
-        result += w[:1] if first else w[:1].upper()
-        result += w[1:]
-        first = False
-    return result
-
-def snake_to_pascal_case(input):
-    words = input.split('_')
-    result = ""
-    for w in words:
-        result += w[:1].upper()
-        result += w[1:]
-    return result
 
