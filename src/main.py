@@ -1,26 +1,17 @@
 import argparse
 import os
-import json
 import sys
 import time
 import traceback
 import collections
-
-from contextlib import contextmanager
-from os.path import basename, dirname, isabs, isdir, join, realpath, relpath
-from textwrap import dedent
-
-import subprocess
-import re
-
+from os.path import realpath
 import clang.cindex
-from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind, AccessSpecifier
+from clang.cindex import CursorKind, Diagnostic, TranslationUnit
 
 from entry import Entry
-from conversions import *
 import writers
 
-class Tagger:
+class Tagger():
     def __init__(self):
         self.tags = {}
         self.current_file_name = None
@@ -194,6 +185,3 @@ def warn(s):
 def error(s):
     sys.stderr.write("%s: Error: %s\n" % (basename(sys.argv[0]), s))
     sys.exit(1)
-
-
-
