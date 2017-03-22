@@ -39,10 +39,12 @@ def main(argv):
 
     args = parse_args(argv)
     initialCwd = os.getcwd()
-    process_header("vector")
-    #process_header("iostream")
 
-def process_header(name):
+    for header in args.headers:
+        process_header(header)
+
+def process_header(header):
+    name = os.path.basename(header)
     debug("  processing <" + name + "> header")
     tagger = Tagger()
     root_entry = Entry("root")
@@ -50,7 +52,7 @@ def process_header(name):
 
     os.chdir(initialCwd)
     out = open(file_name, "wb")
-    out.write("#include <" + name + ">\nint main(int argc, char *argv[]) { return EXIT_SUCCESS; }")
+    out.write("#include \"" + header + "\"\nint main(int argc, char *argv[]) { return EXIT_SUCCESS; }")
     out.close()
 
     do_tags([file_name], tagger, root_entry)
@@ -164,13 +166,14 @@ def is_named_scope(cursor):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Generate STL headers in different coding style.",
-        usage="\nstl-stylizer [options] ")
+        description="Generate C++ wrapper for any header in different coding style.",
+        usage="\ncode-stylizer [options] <header files>")
 
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="enable debugging output")
     parser.add_argument("--version", action="version",
                         version="stl-stylizer 0.1")
+    parser.add_argument("headers", nargs="+", help="Headers to wrap")
 
     a = parser.parse_args(argv[1:])
 
@@ -181,8 +184,8 @@ def debug(s):
         sys.stderr.write(s + "\n")
 
 def warn(s):
-    sys.stderr.write("%s: Warning: %s\n" % (basename(sys.argv[0]), s))
+    sys.stderr.write("%s: Warning: %s\n" % (os.path.basename(sys.argv[0]), s))
 
 def error(s):
-    sys.stderr.write("%s: Error: %s\n" % (basename(sys.argv[0]), s))
+    sys.stderr.write("%s: Error: %s\n" % (os.path.basename(sys.argv[0]), s))
     sys.exit(1)
