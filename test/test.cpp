@@ -1,4 +1,4 @@
-//#include "../out/vector.h"
+#include "../out/vector.h"
 
 int main()
 {

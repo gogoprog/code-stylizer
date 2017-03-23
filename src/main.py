@@ -130,6 +130,9 @@ def do_cursor(cursor, tagger, root_entry):
     if cursor.kind == CursorKind.CXX_BASE_SPECIFIER:
         lastEntry.bases.append(cursor)
 
+    if cursor.kind == CursorKind.TEMPLATE_TYPE_PARAMETER:
+        lastEntry.template_type_parameters.append(cursor)
+
 def is_definition(cursor):
     return (
         (cursor.is_definition() and not cursor.kind in [

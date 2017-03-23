@@ -14,7 +14,8 @@ def write_class(out, entry):
 
     out.write("public " + entry.name)
 
-    out.write(" {\n")
+    out.write("// from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
+    out.write("\n{\n")
 
     out.write("public:\n\tusing " + entry.name + "::" + entry.name + ";\n")
     process_entry(out, entry)
@@ -33,7 +34,8 @@ def write_method(out, entry):
 
 
 def write_class_template(out, entry):
-    out.write("template<TODO>\n")
+    out.write(entry.get_template_decl())
+    out.write("\n")
     write_class(out, entry)
 
 def write_class_template_spe(out, entry):
