@@ -85,8 +85,7 @@ def do_tags(compiler_command_line, tagger, root_entry):
 
     try:
         start = time.time()
-        tu = index.parse(None, compiler_command_line,
-                         options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+        tu = index.parse(None, compiler_command_line, options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
         debug("  clang parse took %.2fs" % (time.time() - start))
     except Exception:
         debug(traceback.format_exc())
@@ -100,12 +99,13 @@ def do_tags(compiler_command_line, tagger, root_entry):
               tu.spelling)
 
     start = time.time()
-    for c in tu.cursor.get_children():
+    for c in tu.cursor.walk_preorder():
         do_cursor(c, tagger, root_entry)
     debug("  tag generation took %.2fs" % (time.time() - start))
 
 def do_cursor(cursor, tagger, root_entry):
     global lastEntry
+
     if is_definition(cursor):
         parents = semantic_parents(cursor)
         direct_parent = root_entry
@@ -126,10 +126,6 @@ def do_cursor(cursor, tagger, root_entry):
             lastEntry.cursor = cursor
 
         tagger.tag(cursor, name)
-
-    if should_tag_children(cursor):
-        for c in cursor.get_children():
-            do_cursor(c, tagger, root_entry)
 
     if cursor.kind == CursorKind.CXX_BASE_SPECIFIER:
         lastEntry.bases.append(cursor)
