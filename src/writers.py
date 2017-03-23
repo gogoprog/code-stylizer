@@ -2,7 +2,7 @@ from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, Translatio
 from conversions import *
 
 def write_namespace(out, entry):
-    out.write("namespace " + entry.name + " {\n")
+    out.write("namespace " + snake_to_pascal_case(entry.cursor.spelling) + " {\n")
     process_entry(out, entry)
     out.write("}\n")
 
@@ -14,12 +14,12 @@ def write_class(out, entry):
 
     out.write("public " + entry.name)
 
-    out.write("// from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
+    out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
     out.write("\n{\n")
 
     out.write("public:\n\tusing " + entry.name + "::" + entry.name + ";\n")
     process_entry(out, entry)
-    out.write("}\n")
+    out.write("};\n")
 
 def write_method(out, entry):
     if entry.cursor.access_specifier == AccessSpecifier.PUBLIC:
