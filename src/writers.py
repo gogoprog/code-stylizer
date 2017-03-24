@@ -9,15 +9,9 @@ def write_namespace(out, entry):
 
 def write_class(out, entry):
     out.write("class " + snake_to_pascal_case(entry.cursor.spelling) + " : ")
-    if len(entry.bases) > 0:
-        if entry.bases[0].displayname[0] != "_":
-            write_base(out, entry.bases[0])
-        else:
-            out.write("public " + entry.name)
-    else:
-        out.write("public " + entry.name)
+    out.write("public " + entry.name)
 
-    out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
+    out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line))
     out.write("\n{\n")
 
     no_template_name = get_without_template(entry.name)
@@ -29,12 +23,14 @@ def write_method(out, entry):
     if entry.cursor.access_specifier == AccessSpecifier.PUBLIC:
         if entry.name[:8] != "operator":
             name = get_method_name(entry.name)
+            converted_name = snake_to_camel_case(name)
             named_args = get_method_named_args_def(entry.name)
             call_str = get_method_call(entry.name)
             has_result = (entry.cursor.result_type.kind != TypeKind.VOID)
 
-            out.write("\t" + ("auto " if has_result else "void ") + snake_to_camel_case(entry.name) + named_args
-                    + " {\n\t\t" + ("return " if has_result else "")  + call_str + ";\n\t}\n")
+            if converted_name != name:
+                out.write("\t" + ("auto " if has_result else "void ") + converted_name + named_args
+                        + " {\n\t\t" + ("return " if has_result else "")  + call_str + ";\n\t}\n")
 
 
 def write_class_template(out, entry):
