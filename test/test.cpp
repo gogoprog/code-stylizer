@@ -1,3 +1,4 @@
+#include <vector>
 #include "../out/vector.h"
 
 int main()

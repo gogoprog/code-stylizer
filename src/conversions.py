@@ -53,6 +53,16 @@ def get_method_call(displayname):
 
     return result
 
+
+def get_without_template(input):
+    result = input
+    template_index = input.find('<')
+    if template_index != -1:
+        #end_index = input.find('>', template_index)
+        result = input[:template_index]
+
+    return result
+
 def snake_to_camel_case(input):
     words = input.split('_')
     result = ""

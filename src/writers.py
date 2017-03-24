@@ -3,6 +3,7 @@ from conversions import *
 
 def write_namespace(out, entry):
     out.write("namespace " + snake_to_pascal_case(entry.cursor.spelling) + " {\n")
+    out.write("using namespace " + entry.cursor.spelling + ";\n")
     process_entry(out, entry)
     out.write("}\n")
 
@@ -19,7 +20,8 @@ def write_class(out, entry):
     out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
     out.write("\n{\n")
 
-    out.write("public:\n\tusing " + entry.name + "::" + entry.name + ";\n")
+    no_template_name = get_without_template(entry.name)
+    out.write("public:\n\tusing " + no_template_name + "::" + no_template_name + ";\n")
     process_entry(out, entry)
     out.write("};\n")
 
@@ -47,6 +49,13 @@ def write_base(out, cursor):
     result = cursor.displayname
     if result[:6] == "class ":
         result = result[6:]
+
+    results = result.split("::")
+
+    result = ""
+
+    for r in results:
+        result += "::" + snake_to_pascal_case(r)
 
     out.write("public " + result)
 
