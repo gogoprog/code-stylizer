@@ -21,7 +21,7 @@ def write_class(out, entry):
     out.write("\n{\n")
 
     no_template_name = get_without_template(entry.name)
-    out.write("public:\n\tusing " + no_template_name + "::" + no_template_name + ";\n")
+    out.write("public:\n\tusing " + entry.name + "::" + no_template_name + ";\n")
     process_entry(out, entry)
     out.write("};\n")
 
