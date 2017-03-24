@@ -10,9 +10,11 @@ def write_class(out, entry):
     out.write("class " + snake_to_pascal_case(entry.cursor.spelling) + " : ")
     if len(entry.bases) > 0:
         if entry.bases[0].displayname[0] != "_":
-            out.write("public " + snake_to_pascal_case(entry.bases[0].displayname) + ", ")
-
-    out.write("public " + entry.name)
+            write_base(out, entry.bases[0])
+        else:
+            out.write("public " + entry.name)
+    else:
+        out.write("public " + entry.name)
 
     out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line));
     out.write("\n{\n")
@@ -39,8 +41,14 @@ def write_class_template(out, entry):
     write_class(out, entry)
 
 def write_class_template_spe(out, entry):
-    out.write("template<>\n")
-    write_class(out, entry)
+    pass
+
+def write_base(out, cursor):
+    result = cursor.displayname
+    if result[:6] == "class ":
+        result = result[6:]
+
+    out.write("public " + result)
 
 writers = {
     CursorKind.NAMESPACE.value: write_namespace,
