@@ -1,4 +1,11 @@
 {
     "python.pythonPath": "/bin/python2",
-    "python.linting.pylintArgs":["--disable=missing-docstring"]
+    "python.linting.pylintArgs":["--disable=missing-docstring"],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/*.pyc": true
+    }
 }
