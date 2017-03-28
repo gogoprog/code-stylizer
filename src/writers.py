@@ -19,7 +19,7 @@ def write_class(out, entry, has_template=False):
     out.write("\n{\n")
 
     no_template_name = get_without_template(entry.name)
-    out.write("public:\n\tusing " + entry.name + "::" + no_template_name + ";\n")
+    out.write("public:\n\tusing " + entry.get_full_name() + "::" + no_template_name + ";\n")
     process_entry(out, entry)
     out.write("};\n")
 
@@ -29,7 +29,7 @@ def write_method(out, entry):
             name = get_method_name(entry.name)
             converted_name = snake_to_camel_case(name)
             named_args = get_method_named_args_def(entry.name)
-            call_str = get_method_call(entry.name)
+            call_str = entry.get_full_parent() + "::" + get_method_call(entry.name)
             has_result = (entry.cursor.result_type.kind != TypeKind.VOID)
 
             if converted_name != name:

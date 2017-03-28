@@ -43,3 +43,14 @@ class Entry:
             current = current.parent
         return result
 
+    def get_full_parent(self):
+        current = self.parent
+        result = ""
+        while current and current.name != "$root":
+            if current.has_template() and current.parent.has_template():
+                result = "::template " + current.name + result
+            else:
+                result = "::" + current.name + result
+            current = current.parent
+        return result
+
