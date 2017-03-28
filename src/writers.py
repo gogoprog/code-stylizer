@@ -7,9 +7,13 @@ def write_namespace(out, entry):
     process_entry(out, entry)
     out.write("}\n")
 
-def write_class(out, entry):
+def write_class(out, entry, has_template=False):
+
+    if not has_template and entry.name.find('<') > 0: # skip specialization
+        return
+
     out.write("class " + snake_to_pascal_case(entry.cursor.spelling) + " : ")
-    out.write("public " + entry.name)
+    out.write("public " + entry.get_full_name())
 
     out.write(" // from " + entry.cursor.location.file.name + ":" + str(entry.cursor.location.line))
     out.write("\n{\n")
@@ -36,7 +40,7 @@ def write_method(out, entry):
 def write_class_template(out, entry):
     out.write(entry.get_template_decl())
     out.write("\n")
-    write_class(out, entry)
+    write_class(out, entry, True)
 
 def write_class_template_spe(out, entry):
     pass

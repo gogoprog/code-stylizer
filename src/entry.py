@@ -29,4 +29,17 @@ class Entry:
         result += ">"
         return result
 
+    def has_template(self):
+        return self.name.find('<') > 0
+
+    def get_full_name(self):
+        current = self
+        result = ""
+        while current and current.name != "$root":
+            if current.has_template() and current.parent.has_template():
+                result = "::template " + current.name + result
+            else:
+                result = "::" + current.name + result
+            current = current.parent
+        return result
 

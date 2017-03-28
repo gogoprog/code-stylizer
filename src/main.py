@@ -49,7 +49,7 @@ def process_header(header):
     name = os.path.basename(header)
     debug("  processing <" + name + "> header")
     tagger = Tagger()
-    root_entry = Entry("root")
+    root_entry = Entry("$root")
     file_name = "/tmp/stl-stylizer." + name + ".cpp"
 
     os.chdir(initialCwd)
