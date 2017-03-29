@@ -31,7 +31,12 @@ def get_method_named_args_def(displayname):
         arg_index += 1
 
     index = args.find(')', index)
-    result += args[previous_index:index]
+    
+    # Real type needs complete path (ex: 'const typename ::std::vector<_Tp, _Alloc>::value_type' for 'value_type')
+    # So let's use c++14 auto deduction
+    #result += args[previous_index:index] 
+    result += "auto"
+
     result += " " + chr(ord('a') + arg_index) + ')'
 
     return result
