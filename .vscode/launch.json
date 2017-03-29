@@ -3,8 +3,6 @@
     "pythonPath":"${config.python.pythonPath}",
     "stopOnEntry": true,
     "console": "none",
-    "program": "${workspaceRoot}/code-stylizer",
-    "cwd": "${workspaceRoot}",
     "debugOptions": [
         "WaitOnAbnormalExit",
         "WaitOnNormalExit",
@@ -19,7 +17,7 @@
             "pythonPath":"${config.python.pythonPath}",
             "stopOnEntry": true,
             "console": "none",
-            "program": "${file}",
+            "program": "${workspaceRoot}/code-stylizer",
             "cwd": "${workspaceRoot}/",
             "args": [
                 "/usr/include/c++/6.3.1/vector"
