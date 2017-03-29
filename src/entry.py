@@ -1,3 +1,4 @@
+from clang.cindex import CursorKind, Diagnostic, TranslationUnit
 
 class Entry:
     def __init__(self, name, cursor=None):
@@ -7,7 +8,6 @@ class Entry:
         self.cursor = cursor
         self.parent = None
         self.bases = []
-        self.template_type_parameters = []
 
     def has_child(self, name):
         return name in self.children_map
@@ -21,11 +21,13 @@ class Entry:
     def get_template_decl(self):
         result = "template<"
         first = True
-        for ttp in self.template_type_parameters:
-            if not first:
-                result += ", "
-            result += "typename " + ttp.displayname
-            first = False
+        for child in self.cursor.get_children():
+            if child.kind == CursorKind.TEMPLATE_TYPE_PARAMETER:
+                if not first:
+                    result += ", "
+                result += "typename " + child.displayname
+                first = False
+    
         result += ">"
         return result
 
