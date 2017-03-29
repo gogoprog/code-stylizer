@@ -1,4 +1,4 @@
 /out
 __pycache__
 *.pyc
-/test/test
+/test/out

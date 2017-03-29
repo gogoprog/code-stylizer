@@ -3,7 +3,6 @@ from conversions import *
 
 def write_namespace(out, entry):
     out.write("namespace " + snake_to_pascal_case(entry.cursor.spelling) + " {\n")
-    out.write("using namespace " + entry.cursor.spelling + ";\n")
     process_entry(out, entry)
     out.write("}\n")
 
