@@ -81,7 +81,7 @@ def process_cursor(cursor, depth):
 
         main.debug("  processing " + os.path.realpath(current_location.file.name))
 
-        if not main.args.pack:
+        if not main.args.output:
             if current_out:
                 current_out.close()
             open_file(current_location.file.name)

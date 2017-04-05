@@ -33,8 +33,8 @@ def process_header(header):
     out.write("#include \"" + header + "\"\nint main(int argc, char *argv[]) { return EXIT_SUCCESS; }")
     out.close()
 
-    if args.pack:
-        writers.open_file(name, False)
+    if args.output:
+        writers.open_file(args.output[0], False)
 
     start_process([file_name])
 
@@ -76,7 +76,7 @@ def parse_args(argv):
         usage="\ncode-stylizer [options] <header files>")
 
     parser.add_argument("-v", "--verbose", action="store_true", help="enable debugging output")
-    parser.add_argument("-p", "--pack", action="store_true", help="pack in one file")
+    parser.add_argument("-o", "--output", nargs=1, help="pack in one output file")
     parser.add_argument("--version", action="version", version="stl-stylizer 0.1")
     parser.add_argument("headers", nargs="+", help="Headers to wrap")
 
