@@ -51,27 +51,17 @@ def write_class_template(cursor, depth):
     write_out(depth, get_template_decl(cursor) + "\n")
     write_class(cursor, depth, True)
 
-
-def write_base(out, cursor):
-    result = cursor.displayname
-    if result[:6] == "class ":
-        result = result[6:]
-
-    results = result.split("::")
-
-    result = ""
-
-    for r in results:
-        result += "::" + snake_to_pascal_case(r)
-
-    out.write("public " + result)
+def write_typedef(cursor, depth):
+    converted_name = snake_to_pascal_case(cursor.displayname)
+    write_out(depth, "typedef typename " + get_full_name(cursor.semantic_parent) + "::" + cursor.displayname + " " + converted_name + ";\n")
 
 writers = {
     CursorKind.NAMESPACE.value: write_namespace,
     CursorKind.CLASS_DECL.value: write_class,
     #CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION.value: write_class_template_spe,
     CursorKind.CLASS_TEMPLATE.value: write_class_template,
-    CursorKind.CXX_METHOD.value: write_method
+    CursorKind.CXX_METHOD.value: write_method,
+    CursorKind.TYPEDEF_DECL.value: write_typedef
 }
 
 def process_cursor(cursor, depth):
