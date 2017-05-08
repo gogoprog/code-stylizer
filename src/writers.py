@@ -152,5 +152,21 @@ def get_template_decl(cursor):
             result += "typename " + child.displayname
             first = False
 
+            # Look for default template parameters:
+            tokens = child.get_tokens()
+            it_has_default_value = False
+            default_value = ""
+            for token in tokens:
+                if not it_has_default_value:
+                    if token.kind.value == 0 and token.spelling == "=":
+                        it_has_default_value = True
+                else:
+                    default_value += token.spelling
+
+            if it_has_default_value:
+                if default_value.find('::') > 0: # Skip unsupported definitions.
+                    result += " = "
+                    result += default_value
+
     result += ">"
     return result
