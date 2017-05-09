@@ -68,20 +68,33 @@ def get_without_template(input):
 
     return result
 
-def snake_to_camel_case(input):
-    words = input.split('_')
+def snake_to_camel_case(input_str):
+    tokens = input_str.split('::')
     result = ""
-    first = True
-    for w in words:
-        result += w[:1] if first else w[:1].upper()
-        result += w[1:]
-        first = False
+    first_token = True
+    for token in tokens:
+        if not first_token:
+            result += "::"
+        first_token = False
+        words = token.split('_')
+        first = True
+        for word in words:
+            result += word[:1] if first else word[:1].upper()
+            result += word[1:]
+            first = False
     return result
 
-def snake_to_pascal_case(input):
-    words = input.split('_')
+def snake_to_pascal_case(input_str):
+    tokens = input_str.split('::')
     result = ""
-    for w in words:
-        result += w[:1].upper()
-        result += w[1:]
+    first_token = True
+    for token in tokens:
+        if not first_token:
+            result += "::"
+        first_token = False
+        words = token.split('_')
+        result = ""
+        for word in words:
+            result += word[:1].upper()
+            result += word[1:]
     return result
