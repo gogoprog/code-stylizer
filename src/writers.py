@@ -4,6 +4,7 @@ import os
 from clang.cindex import CompilationDatabase, CursorKind, Diagnostic, TranslationUnit, TypeKind, AccessSpecifier
 from conversions import *
 import main
+import type_parser
 
 current_location = None
 current_out = None
@@ -164,6 +165,7 @@ def get_template_decl(cursor):
                     default_value += token.spelling
 
             if it_has_default_value:
+                type_parser.parse(default_value)
                 if default_value.find('::') > 0: # Skip unsupported definitions.
                     result += " = "
                     result += default_value
