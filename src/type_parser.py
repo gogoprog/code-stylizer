@@ -1,37 +1,4 @@
-import sys
-import os
-
-class Type(object):
-
-    def __init__(self, text):
-        self.text = text.strip()
-        self.left = None
-        self.templates = []
-
-    def get_parented_string(self):
-        result = self.get_string()
-        left = self.left
-
-        while left != None:
-            result = left.get_string() + "::" + result
-            left = left.left
-
-        return result
-
-    def get_string(self):
-        result = self.text
-
-        if len(self.templates) > 0:
-            result += "<"
-            first = True
-            for template in self.templates:
-                if not first:
-                    result += ", "
-                result += template.get_parented_string()
-                first = False
-            result += ">"
-
-        return result
+from type import Type
 
 def parse(str):
     index = 0

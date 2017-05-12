@@ -1,3 +1,9 @@
+from enum import Enum 
+
+class Case(Enum):
+    SNAKE = 1
+    CAMEL = 2
+    PASCAL = 3
 
 def get_method_name(displayname):
     return displayname[:displayname.index('(')]
@@ -63,38 +69,36 @@ def get_without_template(input):
     result = input
     template_index = input.find('<')
     if template_index != -1:
-        #end_index = input.find('>', template_index)
         result = input[:template_index]
 
     return result
 
 def snake_to_camel_case(input_str):
-    tokens = input_str.split('::')
     result = ""
-    first_token = True
-    for token in tokens:
-        if not first_token:
-            result += "::"
-        first_token = False
-        words = token.split('_')
-        first = True
-        for word in words:
-            result += word[:1] if first else word[:1].upper()
-            result += word[1:]
-            first = False
+    words = input_str.split('_')
+    first = True
+    for word in words:
+        result += word[:1] if first else word[:1].upper()
+        result += word[1:]
+        first = False
     return result
 
 def snake_to_pascal_case(input_str):
-    tokens = input_str.split('::')
     result = ""
-    first_token = True
-    for token in tokens:
-        if not first_token:
-            result += "::"
-        first_token = False
-        words = token.split('_')
-        result = ""
-        for word in words:
-            result += word[:1].upper()
-            result += word[1:]
+    words = input_str.split('_')
+    result = ""
+    for word in words:
+        result += word[:1].upper()
+        result += word[1:]
     return result
+
+def get_conversion(input_string, from_case, to_case):
+    if from_case == Case.SNAKE:
+        if to_case == Case.CAMEL:
+            return snake_to_camel_case(input_string)
+        if to_case == Case.PASCAL:
+            return snake_to_pascal_case(input_string)
+
+    print("Unsupported")
+    assert(False)
+    return None
