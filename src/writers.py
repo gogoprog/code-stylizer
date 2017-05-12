@@ -10,7 +10,7 @@ current_location = None
 current_out = None
 
 def write_namespace(cursor, depth):
-    write_out(depth, "namespace " + snake_to_pascal_case(cursor.spelling) + " ")
+    write_out(depth, "namespace " + get_conversion(cursor.spelling, Case.SNAKE, Case.PASCAL) + " ")
     write_out(depth, "{\n")
     process_children(cursor, depth)
     write_out(depth, "}\n")
@@ -19,7 +19,7 @@ def write_class(cursor, depth, has_template=False):
     if not has_template and cursor.displayname.find('<') > 0: # skip specialization
         return
 
-    write_out(depth, "class " + snake_to_pascal_case(cursor.spelling) + "\n")
+    write_out(depth, "class " + get_conversion(cursor.spelling, Case.SNAKE, Case.PASCAL) + "\n")
     write_out(depth, " : public " + get_full_name(cursor) + "\n")
 
     write_out(depth, " // from " + os.path.realpath(cursor.location.file.name) + ":" + str(cursor.location.line) + "\n")
@@ -36,7 +36,7 @@ def write_method(cursor, depth):
     if cursor.access_specifier == AccessSpecifier.PUBLIC:
         if cursor.displayname[:8] != "operator":
             name = get_method_name(cursor.displayname)
-            converted_name = snake_to_camel_case(name)
+            converted_name = get_conversion(name, Case.SNAKE, Case.CAMEL)
             named_args = get_method_named_args_def(cursor.displayname)
             call_str = get_full_name(cursor.semantic_parent) + "::" + get_method_call(cursor.displayname)
             has_result = (cursor.result_type.kind != TypeKind.VOID)
@@ -53,7 +53,7 @@ def write_class_template(cursor, depth):
     write_class(cursor, depth, True)
 
 def write_typedef(cursor, depth):
-    converted_name = snake_to_pascal_case(cursor.displayname)
+    converted_name = get_conversion(cursor.spelling, Case.SNAKE, Case.PASCAL)
     write_out(depth, "typedef typename " + get_full_name(cursor.semantic_parent) + "::" + cursor.displayname + " " + converted_name + ";\n")
 
 writers = {
