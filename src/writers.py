@@ -164,11 +164,10 @@ def get_template_decl(cursor):
                 else:
                     default_value += token.spelling
 
-            if it_has_default_value:
-                type_parser.parse(default_value)
-                if default_value.find('::') > 0: # Skip unsupported definitions.
-                    result += " = "
-                    result += default_value
+            if it_has_default_value: # todo: Check if not a type
+                default_value_type = type_parser.parse(default_value)
+                result += " = "
+                result += default_value_type.get_parented_string(Case.PASCAL)
 
     result += ">"
     return result

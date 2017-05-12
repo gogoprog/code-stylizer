@@ -64,7 +64,6 @@ def get_method_call(displayname):
 
     return result
 
-
 def get_without_template(input):
     result = input
     template_index = input.find('<')
@@ -93,6 +92,9 @@ def snake_to_pascal_case(input_str):
     return result
 
 def get_conversion(input_string, from_case, to_case):
+    if input_string[0] == "_":
+        return input_string
+
     if from_case == Case.SNAKE:
         if to_case == Case.CAMEL:
             return snake_to_camel_case(input_string)
